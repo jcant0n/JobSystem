@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +19,21 @@ namespace JobSystemTest
 
         public class Context
         {
-            public volatile uint PendingJobs;
+            public volatile uint PendingJobs = 0;
+            public AutoResetEvent Signal = new AutoResetEvent(false);
+
+            public void Increment(uint count)
+            {
+                Interlocked.Add(ref PendingJobs, count);
+            }
+            public void Decrement()
+            {
+                uint currentJobs = Interlocked.Decrement(ref PendingJobs);
+                if(currentJobs == 0)
+                {
+                    Signal.Set();
+                }
+            }
         }
 
         public JobSystem(uint maxThreadCount = 0)
@@ -66,15 +81,12 @@ namespace JobSystemTest
 
         public void Wait(Context context)
         {
-            while (IsBusy(context))
-            {
-                Thread.Yield();
-            }
+            context.Signal.WaitOne();
         }
 
         public void Execute(Context context, Action<JobArgs> function)
         {
-            Interlocked.Increment(ref context.PendingJobs);
+            context.Increment(1);
 
             Job job = new Job
             {
@@ -91,15 +103,15 @@ namespace JobSystemTest
             w.Signal.Set();
         }
 
-        public void Dispatch(Context content, uint jobCount, uint groupSize, Action<JobArgs> function)
+        public void Dispatch(Context context, uint jobCount, uint groupSize, Action<JobArgs> function)
         {
             uint groupCount = (jobCount + groupSize - 1) / groupSize;
-            Interlocked.Add(ref content.PendingJobs, groupCount);
+            context.Increment(groupCount);
 
             Job job = new Job
             {
                 Function = function,
-                Context = content,
+                Context = context,
             };
 
             for (uint groupID = 0; groupID < groupCount; groupID++)

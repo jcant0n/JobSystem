@@ -33,7 +33,7 @@ namespace JobSystemTest
                 Function.Invoke(args);
             }
 
-            Interlocked.Decrement(ref Context.PendingJobs);
+            Context.Decrement();
         }
     }
 

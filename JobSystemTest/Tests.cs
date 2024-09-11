@@ -15,20 +15,39 @@ namespace JobSystemTest
         {
             sw.Reset();
 
-            JobSystem jobSystem = new JobSystem(3);
+            JobSystem jobSystem = new JobSystem(2);
             var context = new JobSystem.Context();
 
             Console.WriteLine("[BasicSecuential test]");
 
             sw.Start();
             uint count = 1000;
-            jobSystem.Dispatch(context, count, 100, (args) =>
+
+            jobSystem.Execute(context, (args) =>
             {
-                if (args.JobIndex % 100 == 0)
-                {
-                    var counter = context.PendingJobs;
-                    Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
-                }
+                var counter = context.PendingJobs;
+                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Thread.Sleep(1); // Simulate workload
+            });
+
+            jobSystem.Execute(context, (args) =>
+            {
+                var counter = context.PendingJobs;
+                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Thread.Sleep(1); // Simulate workload
+            });
+
+            jobSystem.Execute(context, (args) =>
+            {
+                var counter = context.PendingJobs;
+                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Thread.Sleep(1); // Simulate workload
+            });
+
+            jobSystem.Execute(context, (args) =>
+            {
+                var counter = context.PendingJobs;
+                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 Thread.Sleep(1); // Simulate workload
             });
 
