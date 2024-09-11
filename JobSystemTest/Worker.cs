@@ -13,15 +13,16 @@ namespace JobSystemTest
         public Thread Thread;
         public ConcurrentQueue<Job> JobQueue;
         public ManualResetEventSlim Signal;
+        public bool IsRunning;
 
         public Worker(uint threadID)
         {
             ThreadID = threadID;
-            Signal = new ManualResetEventSlim(false);
+            Signal = new ManualResetEventSlim(true);
             JobQueue = new ConcurrentQueue<Job>();
             Thread = new Thread(() =>
             {
-                while (true)
+                while (IsRunning)
                 {
                     Signal.Wait();
 
@@ -35,14 +36,16 @@ namespace JobSystemTest
             })
             {
                 IsBackground = true,
-                Priority = ThreadPriority.Normal
+                Priority = ThreadPriority.AboveNormal,
             };
 
+            IsRunning = true;
             Thread.Start();
         }
 
         public void Dispose()
         {
+            IsRunning = false;
             Signal.Set();
             Thread.Join();
             Signal.Dispose();

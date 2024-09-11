@@ -14,13 +14,18 @@ namespace JobSystemTest
         public Worker[] Workers;
         public readonly uint NumThreads;
         private uint nextQueueIndex;
-        private bool isRunning;
         private bool disposed;
 
-        public class Context
+        public struct Context
         {
             public volatile uint PendingJobs = 0;
-            public AutoResetEvent Signal = new AutoResetEvent(false);
+            public AutoResetEvent Signal;
+
+            public Context()
+            {
+                PendingJobs = 0;
+                Signal = new AutoResetEvent(false);
+            }
 
             public void Increment(uint count)
             {
@@ -29,7 +34,7 @@ namespace JobSystemTest
             public void Decrement()
             {
                 uint currentJobs = Interlocked.Decrement(ref PendingJobs);
-                if(currentJobs == 0)
+                if (currentJobs == 0)
                 {
                     Signal.Set();
                 }
@@ -38,8 +43,6 @@ namespace JobSystemTest
 
         public JobSystem(uint maxThreadCount = 0)
         {
-            isRunning = false;
-
             if (maxThreadCount == 0)
             {
                 NumThreads = (uint)Environment.ProcessorCount;
@@ -59,18 +62,12 @@ namespace JobSystemTest
 
         public void Dispose()
         {
-            if (isRunning)
+            for (int i = 0; i < Workers.Length; i++)
             {
-                isRunning = false;
-
-                for (int i = 0; i < Workers.Length; i++)
-                {
-                    Workers[i].Dispose();
-                }
-
-                Array.Clear(Workers);
+                Workers[i].Dispose();
             }
 
+            Array.Clear(Workers);
             GC.SuppressFinalize(this);
         }
 

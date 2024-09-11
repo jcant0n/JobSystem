@@ -16,7 +16,7 @@ namespace JobSystemTest
     public class Job
     {
         public required Action<JobArgs> Function;
-        public required JobSystem.Context Context;
+        public JobSystem.Context Context;
         public uint GroupID;
         public uint GroupJobOffset;
         public uint GroupJobEnd;
