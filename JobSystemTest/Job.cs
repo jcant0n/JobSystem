@@ -13,7 +13,7 @@ namespace JobSystemTest
         public uint GroupIndex;
     }
 
-    public class Job
+    public struct Job
     {
         public required Action<JobArgs> Function;
         public JobSystem.Context Context;

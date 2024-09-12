@@ -1,4 +1,5 @@
 ﻿using System;
+using static JobSystemTest.Tests;
 
 namespace JobSystemTest
 {
@@ -6,10 +7,12 @@ namespace JobSystemTest
     {
         static async Task Main(string[] args)
         {
-            //Tests.BasicSecuential();
-            //Tests.BasicDispatch();
-            //Tests.MultiContextSecuential();
-            Tests.MatrixInversionDispatchTest();
+            //BasicSecuential();
+            //BasicDispatch();
+            //MultiContextSecuential();
+            //MatrixInversionDispatchTest();
+            StealingJobs();
+            //FibonacciDispatchTest();
 
             Console.WriteLine("All JobSystem tests are finished, Press any key to continue.");
             //Console.ReadKey();
