@@ -70,7 +70,7 @@ namespace JobSystemTest
             int[,] matrix2 = InitializeMatrix(1000, 1000);
             int[,] result = new int[1000, 1000];
 
-            int count = 5;
+            int count = 15;
             int[] numbers = new int[count];
             long[] results = new long[count];
             Random random = new Random();
@@ -80,7 +80,7 @@ namespace JobSystemTest
                 numbers[i] = random.Next(35, 40);
             }
 
-            JobSystem jobSystem = new JobSystem(2);
+            JobSystem jobSystem = new JobSystem((uint)Environment.ProcessorCount);
             var context = new Context();
 
             Console.WriteLine("[StealingJobs test]");
@@ -89,23 +89,22 @@ namespace JobSystemTest
 
             jobSystem.Execute(context, (args) =>
             {
-                var counter = context.PendingJobs;
                 MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
-                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
             });
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 48; i++)
             {
                 jobSystem.Execute(context, (args) =>
                 {
-                    var counter = context.PendingJobs;
-                    for (int index = 0; index < count; index++)
+                    int size = random.Next(8, 15);
+                    for (int index = 0; index < size; index++)
                     {
                         int number = numbers[index];
                         results[index] = Fibonacci(number);
 
                     }
-                    Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                    Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 });
             }
 
