@@ -8,10 +8,12 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static JobSystemTest.JobSystem;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JobSystemTest
 {
-    public unsafe class JobSystem : IDisposable
+    public class JobSystem : IDisposable
     {
         public Thread[] Workers;
         public ConcurrentQueue<Job>[] QueuePerWorker;
@@ -21,31 +23,6 @@ namespace JobSystemTest
         private uint nextQueueIndex;
         private bool isRunning;
         private bool disposed;
-
-        public class Context
-        {
-            public volatile uint PendingJobs = 0;
-            public AutoResetEvent Signal;
-
-            public Context()
-            {
-                PendingJobs = 0;
-                Signal = new AutoResetEvent(false);
-            }
-
-            public void Increment(uint count)
-            {
-                Interlocked.Add(ref PendingJobs, count);
-            }
-            public void Decrement()
-            {
-                uint currentJobs = Interlocked.Decrement(ref PendingJobs);
-                if (currentJobs == 0)
-                {
-                    Signal.Set();
-                }
-            }
-        }
 
         public JobSystem(uint maxThreadCount = 0)
         {
@@ -72,12 +49,12 @@ namespace JobSystemTest
                 uint threadID = i;
                 Workers[i] = new Thread(() =>
                 {
-                    uint nextThreadID = threadID;
+                    Random random = new Random(unchecked(Environment.TickCount * (int)threadID));
 
                     while (isRunning)
                     {
                         SignalPerWorker[threadID].Wait();
-                        
+
                         // Own queue
                         while (QueuePerWorker[threadID].TryDequeue(out var job))
                         {
@@ -85,14 +62,27 @@ namespace JobSystemTest
                         }
 
                         // Steal from other queues
-                        for (int n = 0; n < NumThreads; n++)
-                        {
-                            nextThreadID = (nextThreadID + 1) % NumThreads;
+                        int attempts = 0;
+                        int maxAttempts = (int)NumThreads;
 
-                            while (QueuePerWorker[nextThreadID].TryDequeue(out var job))
+                        while (attempts < maxAttempts)
+                        {
+                            uint victimThreadID = (uint)random.Next((int)NumThreads);
+                            if (victimThreadID == threadID)
                             {
-                                Console.WriteLine($"Thread: {threadID} stolen from Thread: {nextThreadID}");
+                                attempts++;
+                                continue;
+                            }
+
+                            if (QueuePerWorker[victimThreadID].TryDequeue(out var job))
+                            {
+                                Console.WriteLine($"Thread: {threadID} stolen from Thread: {victimThreadID}");
                                 job.Execute();
+                                attempts = 0;
+                            }
+                            else
+                            {
+                                attempts++;
                             }
                         }
 
@@ -102,7 +92,7 @@ namespace JobSystemTest
                 {
                     Name = $"JobSystem Worker {i}",
                     IsBackground = true,
-                    Priority = ThreadPriority.Highest,
+                    Priority = ThreadPriority.Normal,
                 };
 
                 Workers[threadID].Start();
@@ -120,61 +110,41 @@ namespace JobSystemTest
                 SignalPerWorker[i].Dispose();
             }
 
-            Array.Clear(Workers);
-            GC.SuppressFinalize(this);
+            Workers = null;
         }
 
-        public bool IsBusy(Context context)
+        public bool IsBusy(JobsContext context)
         {
             return context.PendingJobs > 0;
         }
 
-        public void Wait(Context context)
+        public void Wait(JobsContext context)
         {
             context.Signal.WaitOne();
         }
 
-        public void Execute(Context context, Action<JobArgs> function)
+        public void Execute(JobsContext context, Action<JobArgs> function)
         {
-            Job job = new Job
-            {
-                Function = function,
-                Context = context,
-                GroupID = 0,
-                GroupJobOffset = 0,
-                GroupJobEnd = 1,
-            };
-
+            Job job = new Job(function, context, 0, 0, 1);
             uint queueIndex = Interlocked.Increment(ref nextQueueIndex) % NumThreads;
             QueuePerWorker[queueIndex].Enqueue(job);
             context.Increment(1);
             SignalPerWorker[queueIndex].Set();
         }
 
-        public void Dispatch(Context context, uint jobCount, uint groupSize, Action<JobArgs> function)
+        public void Dispatch(JobsContext context, uint jobCount, uint groupSize, Action<JobArgs> function)
         {
             uint groupCount = (jobCount + groupSize - 1) / groupSize;
             context.Increment(groupCount);
 
-            Job job = new Job
-            {
-                Function = function,
-                Context = context,
-            };
-
             for (uint groupID = 0; groupID < groupCount; groupID++)
             {
-                job.GroupID = groupID;
-                job.GroupJobOffset = groupID * groupSize;
-                job.GroupJobEnd = Math.Min(jobCount, job.GroupJobOffset + groupSize);
+                uint offset = groupID * groupSize;
+                Job job = new Job(function, context, groupID, offset, Math.Min(jobCount, offset + groupSize));
 
                 uint queueIndex = Interlocked.Increment(ref nextQueueIndex) % NumThreads;
                 QueuePerWorker[queueIndex].Enqueue(job);
-            }
-
-            for (int i = 0; i < NumThreads; i++)
-            {
-                SignalPerWorker[i].Set();
+                SignalPerWorker[queueIndex].Set();
             }
         }
     }

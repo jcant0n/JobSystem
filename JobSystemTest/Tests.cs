@@ -21,7 +21,7 @@ namespace JobSystemTest
             sw.Reset();
 
             JobSystem jobSystem = new JobSystem(2);
-            var context = new Context();
+            var context = new JobsContext();
 
             Console.WriteLine("[BasicSecuential test]");
 
@@ -81,17 +81,20 @@ namespace JobSystemTest
             }
 
             JobSystem jobSystem = new JobSystem((uint)Environment.ProcessorCount);
-            var context = new Context();
+            var context = new JobsContext();
 
             Console.WriteLine("[StealingJobs test]");
 
             sw.Start();
 
-            jobSystem.Execute(context, (args) =>
+            for (int i = 0; i < 10; i++)
             {
-                MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
-                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
-            });
+                jobSystem.Execute(context, (args) =>
+                {
+                    MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
+                    Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                });
+            }
 
             for (int i = 0; i < 48; i++)
             {
@@ -119,7 +122,7 @@ namespace JobSystemTest
             sw.Reset();
 
             JobSystem jobSystem = new JobSystem(2);
-            var ctx1 = new Context();
+            var ctx1 = new JobsContext();
 
             Console.WriteLine("[MultiContextSecuential] test]");
 
@@ -139,7 +142,7 @@ namespace JobSystemTest
                 Thread.Sleep(1); // Simulate workload
             });
 
-            var ctx2 = new Context();
+            var ctx2 = new JobsContext();
             jobSystem.Execute(ctx2, (args) =>
             {
                 var counter = ctx2.PendingJobs;
@@ -169,7 +172,7 @@ namespace JobSystemTest
             sw.Reset();
 
             JobSystem jobSystem = new JobSystem(3);
-            var context = new Context();
+            var context = new JobsContext();
 
             Console.WriteLine("[BasicDispatch] test.");
 
@@ -197,7 +200,7 @@ namespace JobSystemTest
         {
             sw.Reset();
             JobSystem jobSystem = new JobSystem((uint)Environment.ProcessorCount);
-            var ctx = new Context();
+            var ctx = new JobsContext();
 
             Console.WriteLine("[MatrixInversionDispatchTest] test.");
 
@@ -235,7 +238,7 @@ namespace JobSystemTest
             sw.Reset();
 
             JobSystem jobSystem = new JobSystem(4);
-            var ctx = new Context();
+            var ctx = new JobsContext();
 
             Console.WriteLine("[FibonacciDispatchTest] test.");
 

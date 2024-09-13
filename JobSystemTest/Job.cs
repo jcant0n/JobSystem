@@ -6,34 +6,42 @@ using System.Threading.Tasks;
 
 namespace JobSystemTest
 {
-    public struct JobArgs
-    {
-        public uint JobIndex;
-        public uint GroupID;
-        public uint GroupIndex;
-    }
 
     public struct Job
     {
-        public required Action<JobArgs> Function;
-        public JobSystem.Context Context;
-        public uint GroupID;
-        public uint GroupJobOffset;
-        public uint GroupJobEnd;
+        public readonly Action<JobArgs> Function;
+        public readonly JobsContext Context;
+        public readonly uint GroupID;
+        public readonly uint GroupJobOffset;
+        public readonly uint GroupJobEnd;
+
+        public Job(Action<JobArgs> function, JobsContext context, uint groupID, uint groupJobOffset, uint groupJobEnd)
+        {
+            Function = function;
+            Context = context;
+            GroupID = groupID;
+            GroupJobOffset = groupJobOffset;
+            GroupJobEnd = groupJobEnd;
+        }
 
         public void Execute()
         {
-            JobArgs args = default;
-            args.GroupID = GroupID;
-
-            for (uint i = GroupJobOffset; i < GroupJobEnd; i++)
+            try
             {
-                args.JobIndex = i;
-                args.GroupIndex = i - GroupJobOffset;
-                Function.Invoke(args);
+                for (uint i = GroupJobOffset; i < GroupJobEnd; i++)
+                {
+                    JobArgs args = new JobArgs(i, GroupID, i - GroupJobOffset);
+                    Function.Invoke(args);
+                }
             }
-
-            Context.Decrement();
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"Error executing job: {e.Message}");
+            }
+            finally
+            {
+                Context.Decrement();
+            }
         }
     }
 
