@@ -1,3 +1,5 @@
 ﻿.vs
 JobSystemTest/obj
 JobSystemTest/bin
+Benchmarks/bin
+Benchmarks/obj

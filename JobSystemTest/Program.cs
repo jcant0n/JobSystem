@@ -5,14 +5,14 @@ namespace JobSystemTest
 {
     internal class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-            //BasicSecuential();
-            //BasicDispatch();
-            //MultiContextSecuential();
-            //MatrixInversionDispatchTest();
+            BasicSecuential();
+            BasicDispatch();
+            MultiContextSecuential();
+            MatrixInversionDispatchTest();
             StealingJobs();
-            //FibonacciDispatchTest();
+            FibonacciDispatchTest();
 
             Console.WriteLine("All JobSystem tests are finished, Press any key to continue.");
             //Console.ReadKey();

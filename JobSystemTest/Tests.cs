@@ -1,14 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Numerics;
-using System.Reflection;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
-using static JobSystemTest.JobSystem;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JobSystemTest
 {

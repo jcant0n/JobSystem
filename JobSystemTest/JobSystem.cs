@@ -1,15 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using static JobSystemTest.JobSystem;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using System.Collections.Concurrent;
 
 namespace JobSystemTest
 {
@@ -22,7 +11,11 @@ namespace JobSystemTest
         public readonly uint NumThreads;
         private uint nextQueueIndex;
         private bool isRunning;
-        private bool disposed;
+
+        private static readonly ThreadLocal<XorShiftRandom> threadLocalXorShiftRandom = new ThreadLocal<XorShiftRandom>(() =>
+        {
+            return new XorShiftRandom((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
+        });
 
         public JobSystem(uint maxThreadCount = 0)
         {
@@ -49,7 +42,7 @@ namespace JobSystemTest
                 uint threadID = i;
                 Workers[i] = new Thread(() =>
                 {
-                    Random random = new Random(unchecked(Environment.TickCount * (int)threadID));
+                    var random = threadLocalXorShiftRandom.Value;
 
                     while (isRunning)
                     {
@@ -63,11 +56,11 @@ namespace JobSystemTest
 
                         // Steal from other queues
                         int attempts = 0;
-                        int maxAttempts = (int)NumThreads;
+                        int maxAttempts = (int)NumThreads - 1;
 
                         while (attempts < maxAttempts)
                         {
-                            uint victimThreadID = (uint)random.Next((int)NumThreads);
+                            uint victimThreadID = random.Next(NumThreads);
                             if (victimThreadID == threadID)
                             {
                                 attempts++;
@@ -76,7 +69,6 @@ namespace JobSystemTest
 
                             if (QueuePerWorker[victimThreadID].TryDequeue(out var job))
                             {
-                                Console.WriteLine($"Thread: {threadID} stolen from Thread: {victimThreadID}");
                                 job.Execute();
                                 attempts = 0;
                             }
@@ -109,8 +101,6 @@ namespace JobSystemTest
                 Workers[i].Join();
                 SignalPerWorker[i].Dispose();
             }
-
-            Workers = null;
         }
 
         public bool IsBusy(JobsContext context)
