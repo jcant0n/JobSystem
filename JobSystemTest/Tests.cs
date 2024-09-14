@@ -7,6 +7,23 @@ namespace JobSystemTest
     {
         public static Stopwatch sw = new Stopwatch();
 
+        public static void RandomTest()
+        {
+            int size = 24;
+            int[] results = new int[size];
+            XorShiftRandom random = new XorShiftRandom((ulong)Environment.TickCount);
+            for (int i = 0; i < 1000000; i++) 
+            {
+                uint index = random.Next((uint)size);
+                results[index] = results[index] + 1;
+            }
+
+            for (int i = 0;i < size; i++) 
+            {
+                Console.WriteLine(results[i]);
+            }
+        }
+
         public static void BasicSecuential()
         {
             sw.Reset();

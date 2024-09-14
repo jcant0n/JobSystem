@@ -1,4 +1,6 @@
-﻿namespace JobSystemTest
+﻿using System.Runtime.CompilerServices;
+
+namespace JobSystemTest
 {
 
     public struct Job
@@ -18,6 +20,7 @@
             GroupJobEnd = groupJobEnd;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Execute()
         {
             try

@@ -11,8 +11,9 @@ namespace JobSystemTest
             //BasicDispatch();
             //MultiContextSecuential();
             //MatrixInversionDispatchTest();
-            StealingJobs();
+            //StealingJobs();
             //FibonacciDispatchTest();
+            RandomTest();
 
             Console.WriteLine("All JobSystem tests are finished, Press any key to continue.");
             //Console.ReadKey();
