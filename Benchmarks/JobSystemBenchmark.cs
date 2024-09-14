@@ -1,13 +1,27 @@
 ﻿using System;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Iced.Intel;
 
 namespace JobSystemTest
 {
-    // Include necessary namespaces and your JobSystem classes here
-    // Ensure that all the classes like JobSystem, JobsContext, Job, JobArgs, and XorShiftRandom are in this namespace or properly referenced
+    //BenchmarkDotNet v0.14.0, Windows 11 (10.0.22631.4037/23H2/2023Update/SunValley3)
+    //13th Gen Intel Core i7-13700KF, 1 CPU, 24 logical and 16 physical cores
+    //.NET SDK 8.0.202
+    //  [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+    //  Job-KPQDBX : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+
+    //Job = Job - KPQDBX  InvocationCount=1  UnrollFactor=1
+
+    //| Method                              | Mean      | Ratio | Allocated | Alloc Ratio |
+    //|------------------------------------ |----------:|------:|----------:|------------:|
+    //| MultiplyMatrixSerially              | 123.32 ms |  1.00 |     400 B |        1.00 |
+    //| MultiplyMatrixWithParallelFor       |  14.08 ms |  0.11 |    7312 B |       18.28 |
+    //| MultiplyMatrixWithJobSystemDispatch |  11.26 ms |  0.09 |     760 B |        1.90 |
 
     [MemoryDiagnoser]
     [HideColumns("Job", "Error", "StdDev", "Median", "RatioSD")]
@@ -18,7 +32,7 @@ namespace JobSystemTest
         private int[,] result;
 
         private JobSystem jobSystem;
-        private int matrixSize = 1000; // Adjust the size based on your system's capabilities
+        private int matrixSize = 500;
         private ParallelOptions parallelOptions;
 
         [GlobalSetup]
@@ -92,11 +106,8 @@ namespace JobSystemTest
             // Create a new context for this benchmark
             var context = new JobsContext();
 
-            uint jobCount = (uint)matrixSize; // One job per row
-            uint groupSize = 100; // Adjust group size as needed
-
             // Use JobSystem.Dispatch to distribute the work across jobs
-            jobSystem.Dispatch(context, jobCount, groupSize, (args) =>
+            jobSystem.Dispatch(context, (uint)matrixSize, 7, (args) =>
             {
                 int i = (int)args.JobIndex;
                 for (int j = 0; j < matrixSize; j++)
@@ -126,22 +137,6 @@ namespace JobSystemTest
                 }
             }
             return mat;
-        }
-
-        private void MultiplyMatrix(int[,] mat1, int[,] mat2, int[,] result, int startRow, int endRow)
-        {
-            for (int i = startRow; i < endRow; i++)
-            {
-                for (int j = 0; j < mat2.GetLength(1); j++)
-                {
-                    int sum = 0;
-                    for (int k = 0; k < mat1.GetLength(1); k++)
-                    {
-                        sum += mat1[i, k] * mat2[k, j];
-                    }
-                    result[i, j] = sum;
-                }
-            }
         }
     }
 }
