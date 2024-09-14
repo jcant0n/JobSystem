@@ -6,7 +6,8 @@ namespace JobSystemTest
     {
         static void Main(string[] args)
         {
-            var summary = BenchmarkRunner.Run<RandomBenchmark>();
+            //var summary = BenchmarkRunner.Run<RandomBenchmark>();
+            var summary = BenchmarkRunner.Run<JobSystemBenchmark>();
         }
     }
 }
