@@ -9,24 +9,30 @@ using System.Threading;
 
 namespace JobSystemTest
 {
-    //BenchmarkDotNet v0.14.0, Windows 11 (10.0.22631.4169/23H2/2023Update/SunValley3)
-    //Intel Core i9-10980HK CPU 2.40GHz, 1 CPU, 16 logical and 8 physical cores
-    //.NET SDK 8.0.304
-    //  [Host]     : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
-    //  DefaultJob : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
+    //BenchmarkDotNet v0.14.0, Windows 11 (10.0.22631.4037/23H2/2023Update/SunValley3)
+    //13th Gen Intel Core i7-13700KF, 1 CPU, 24 logical and 16 physical cores
+    //.NET SDK 8.0.202
+    //  [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+    //  DefaultJob : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
 
-    //| Method                          | Mean     | Error     | StdDev    | Allocated |
-    //|-------------------------------- |---------:|----------:|----------:|----------:|
-    //| SystemRandom_Next               | 6.078 ms | 0.0485 ms | 0.0430 ms |       3 B |
-    //| XorShiftRandom_Next             | 2.053 ms | 0.0157 ms | 0.0147 ms |       2 B |
-    //| SystemRandom_ThreadLocal_Next   | 5.297 ms | 0.0464 ms | 0.0411 ms |       3 B |
-    //| XorShiftRandom_ThreadLocal_Next | 1.939 ms | 0.0031 ms | 0.0024 ms |       1 B |
+    //Job = DefaultJob
+
+    //| Method | Mean | Allocated |
+    //| ---------------------------------- | -----------:|----------:|
+    //| SystemRandom_Next                 | 4,971.9 us |       3 B |
+    //| XorShiftRandom_Next               | 1,174.8 us |       1 B |
+    //| Xoshiro256Random_Next             |   853.9 us |         - |
+    //| SystemRandom_ThreadLocal_Next     | 4,498.5 us |       2 B |
+    //| XorShiftRandom_ThreadLocal_Next   | 1,212.3 us |       1 B |
+    //| Xoshiro256Random_ThreadLocal_Next |   947.3 us |         - |
 
     [MemoryDiagnoser]
+    [HideColumns("Job", "Error", "StdDev", "Median", "RatioSD")]
     public class RandomBenchmark
     {
         private Random systemRandom;
         private XorShiftRandom xorShiftRandom;
+        private Xoshiro256StarStar Xoshiro256Random;
 
         private const uint N = 1000000;
 
@@ -40,11 +46,18 @@ namespace JobSystemTest
             return new XorShiftRandom((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
         });
 
+        private static readonly ThreadLocal<Xoshiro256StarStar> threadLocalXoshiro256Random = new ThreadLocal<Xoshiro256StarStar>(() =>
+        {
+            return new Xoshiro256StarStar((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
+        });
+
         [GlobalSetup]
         public void Setup()
         {
-            systemRandom = new Random(42);
-            xorShiftRandom = new XorShiftRandom(42);
+            ulong seed = 42;
+            systemRandom = new Random((int)seed);
+            xorShiftRandom = new XorShiftRandom(seed);
+            Xoshiro256Random = new Xoshiro256StarStar(seed);
         }
 
         [Benchmark]
@@ -68,6 +81,17 @@ namespace JobSystemTest
             }
             return sum;
         }
+        [Benchmark]
+        public uint Xoshiro256Random_Next()
+        {
+            uint sum = 0;
+            for (int i = 0; i < N; i++)
+            {
+                sum += Xoshiro256Random.Next();
+            }
+            return sum;
+        }
+
 
         [Benchmark]
         public uint SystemRandom_ThreadLocal_Next()
@@ -92,5 +116,17 @@ namespace JobSystemTest
             }
             return sum;
         }
+        [Benchmark]
+        public uint Xoshiro256Random_ThreadLocal_Next()
+        {
+            uint sum = 0;
+            var random = threadLocalXoshiro256Random.Value;
+            for (int i = 0; i < N; i++)
+            {
+                sum += random.Next();
+            }
+            return sum;
+        }
+
     }
 }

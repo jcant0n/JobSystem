@@ -13,9 +13,9 @@ namespace JobSystemTest
         private uint nextQueueIndex;
         private bool isRunning;
 
-        private static readonly ThreadLocal<XorShiftRandom> threadLocalXorShiftRandom = new ThreadLocal<XorShiftRandom>(() =>
+        private static readonly ThreadLocal<Xoshiro256StarStar> threadLocalXorShiftRandom = new ThreadLocal<Xoshiro256StarStar>(() =>
         {
-            return new XorShiftRandom((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
+            return new Xoshiro256StarStar((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
         });
 
         public JobSystem(uint maxThreadCount = 0)

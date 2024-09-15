@@ -11,14 +11,14 @@ namespace JobSystemTest
         {
             int size = 24;
             int[] results = new int[size];
-            XorShiftRandom random = new XorShiftRandom((ulong)Environment.TickCount);
-            for (int i = 0; i < 1000000; i++) 
+            Xoshiro256StarStar random = new Xoshiro256StarStar((ulong)Environment.TickCount);
+            for (int i = 0; i < 1000000; i++)
             {
                 uint index = random.Next((uint)size);
                 results[index] = results[index] + 1;
             }
 
-            for (int i = 0;i < size; i++) 
+            for (int i = 0; i < size; i++)
             {
                 Console.WriteLine(results[i]);
             }
@@ -37,29 +37,25 @@ namespace JobSystemTest
 
             jobSystem.Execute(context, (args) =>
             {
-                var counter = context.PendingJobs;
-                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 Thread.Sleep(1); // Simulate workload
             });
 
             jobSystem.Execute(context, (args) =>
             {
-                var counter = context.PendingJobs;
-                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 Thread.Sleep(1); // Simulate workload
             });
 
             jobSystem.Execute(context, (args) =>
             {
-                var counter = context.PendingJobs;
-                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 Thread.Sleep(1); // Simulate workload
             });
 
             jobSystem.Execute(context, (args) =>
             {
-                var counter = context.PendingJobs;
-                Console.WriteLine($"Pending Jobs {counter}, Thread {Thread.CurrentThread.ManagedThreadId}");
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
                 Thread.Sleep(1); // Simulate workload
             });
 
@@ -122,6 +118,65 @@ namespace JobSystemTest
             jobSystem.Wait(context);
             sw.Stop();
             Console.WriteLine($"[StealingJobs test] - Time: {sw.ElapsedMilliseconds}");
+            jobSystem.Dispose();
+        }
+
+        public static void ContextRecycling()
+        {
+            sw.Reset();
+
+            // Initialize data
+            int[,] matrix1 = InitializeMatrix(1000, 1000);
+            int[,] matrix2 = InitializeMatrix(1000, 1000);
+            int[,] result = new int[1000, 1000];
+
+            int count = 15;
+            int[] numbers = new int[count];
+            long[] results = new long[count];
+            Random random = new Random();
+
+            for (int i = 0; i < count; i++)
+            {
+                numbers[i] = random.Next(35, 40);
+            }
+
+            JobSystem jobSystem = new JobSystem(2);
+            var context = new JobsContext();
+
+            Console.WriteLine("[ContextRecycling test]");
+
+            sw.Start();
+
+            jobSystem.Execute(context, (args) =>
+            {
+                MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
+            });
+
+            jobSystem.Execute(context, (args) =>
+            {
+                MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
+            });
+
+            jobSystem.Wait(context);
+            Console.WriteLine($"Context 1 has finished - Time: {sw.ElapsedMilliseconds}");
+
+            jobSystem.Execute(context, (args) =>
+            {
+                MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
+            });
+
+            jobSystem.Execute(context, (args) =>
+            {
+                MultiplyMatrix(matrix1, matrix2, result, 0, 1000);
+                Console.WriteLine($"Pending Jobs {context.PendingJobs}, Thread {Thread.CurrentThread.ManagedThreadId}");
+            });
+
+            jobSystem.Wait(context);
+            sw.Stop();
+            Console.WriteLine($"[ContextRecycling test] - Time: {sw.ElapsedMilliseconds}");
             jobSystem.Dispose();
         }
 

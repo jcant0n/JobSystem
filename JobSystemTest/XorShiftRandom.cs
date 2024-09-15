@@ -37,5 +37,4 @@
             return minValue + Next(maxValue - minValue);
         }
     }
-
 }

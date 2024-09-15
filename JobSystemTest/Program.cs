@@ -14,6 +14,7 @@ namespace JobSystemTest
             //StealingJobs();
             //FibonacciDispatchTest();
             RandomTest();
+            //ContextRecycling();
 
             Console.WriteLine("All JobSystem tests are finished, Press any key to continue.");
             //Console.ReadKey();
