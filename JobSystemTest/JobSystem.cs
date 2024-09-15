@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace JobSystemTest
 {
@@ -41,47 +42,7 @@ namespace JobSystemTest
                 QueuePerWorker[i] = new ConcurrentQueue<Job>();
 
                 uint threadID = i;
-                Workers[i] = new Thread(() =>
-                {
-                    var random = threadLocalXorShiftRandom.Value;
-
-                    while (isRunning)
-                    {
-                        SignalPerWorker[threadID].Wait();
-
-                        // Own queue
-                        while (QueuePerWorker[threadID].TryDequeue(out var job))
-                        {
-                            job.Execute();
-                        }
-
-                        // Steal from other queues
-                        int attempts = 0;
-                        int maxAttempts = (int)NumThreads - 1;
-
-                        while (attempts < maxAttempts)
-                        {
-                            uint victimThreadID = random.Next(NumThreads);
-                            if (victimThreadID == threadID)
-                            {
-                                attempts++;
-                                continue;
-                            }
-
-                            if (QueuePerWorker[victimThreadID].TryDequeue(out var job))
-                            {
-                                job.Execute();
-                                attempts = 0;
-                            }
-                            else
-                            {
-                                attempts++;
-                            }
-                        }
-
-                        SignalPerWorker[threadID].Reset();
-                    }
-                })
+                Workers[i] = new Thread(() => WorkerThread(threadID))
                 {
                     Name = $"JobSystem Worker {i}",
                     IsBackground = true,
@@ -89,6 +50,48 @@ namespace JobSystemTest
                 };
 
                 Workers[threadID].Start();
+            }
+        }
+
+        private void WorkerThread(uint threadID)
+        {
+            var random = threadLocalXorShiftRandom.Value;
+
+            while (isRunning)
+            {
+                SignalPerWorker[threadID].Wait();
+
+                // Own queue
+                while (QueuePerWorker[threadID].TryDequeue(out var job))
+                {
+                    job.Execute();
+                }
+
+                // Steal from other queues
+                int attempts = 0;
+                int maxAttempts = (int)NumThreads - 1;
+
+                while (attempts < maxAttempts)
+                {
+                    uint victimThreadID = random.Next(NumThreads);
+                    if (victimThreadID == threadID)
+                    {
+                        attempts++;
+                        continue;
+                    }
+
+                    if (QueuePerWorker[victimThreadID].TryDequeue(out var job))
+                    {
+                        job.Execute();
+                        attempts = 0;
+                    }
+                    else
+                    {
+                        attempts++;
+                    }
+                }
+
+                SignalPerWorker[threadID].Reset();
             }
         }
 
