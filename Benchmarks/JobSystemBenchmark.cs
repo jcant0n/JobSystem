@@ -64,25 +64,25 @@ namespace JobSystemTest
             Array.Clear(result, 0, result.Length);
         }
 
-        [Benchmark(Baseline = true)]
-        public void MultiplyMatrixSerially()
-        {
-            // Multiply matrices on the main thread without parallelism
-            for (int i = 0; i < matrixSize; i++)
-            {
-                for (int j = 0; j < matrixSize; j++)
-                {
-                    int sum = 0;
-                    for (int k = 0; k < matrixSize; k++)
-                    {
-                        sum += matrix1[i, k] * matrix2[k, j];
-                    }
-                    result[i, j] = sum;
-                }
-            }
-        }
+        //[Benchmark(Baseline = true)]
+        //public void MultiplyMatrixSerially()
+        //{
+        //    // Multiply matrices on the main thread without parallelism
+        //    for (int i = 0; i < matrixSize; i++)
+        //    {
+        //        for (int j = 0; j < matrixSize; j++)
+        //        {
+        //            int sum = 0;
+        //            for (int k = 0; k < matrixSize; k++)
+        //            {
+        //                sum += matrix1[i, k] * matrix2[k, j];
+        //            }
+        //            result[i, j] = sum;
+        //        }
+        //    }
+        //}
 
-        [Benchmark]
+        [Benchmark(Baseline = true)]
         public void MultiplyMatrixWithParallelFor()
         {
             // Multiply matrices using Parallel.For

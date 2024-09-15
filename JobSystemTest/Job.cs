@@ -1,15 +1,16 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace JobSystemTest
 {
-
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct Job
     {
-        public readonly Action<JobArgs> Function;
-        public readonly JobsContext Context;
-        public readonly uint GroupID;
-        public readonly uint GroupJobOffset;
-        public readonly uint GroupJobEnd;
+        [FieldOffset(0)] public readonly Action<JobArgs> Function;
+        [FieldOffset(8)] public readonly JobsContext Context;
+        [FieldOffset(16)] public readonly uint GroupID;
+        [FieldOffset(20)] public readonly uint GroupJobOffset;
+        [FieldOffset(24)] public readonly uint GroupJobEnd;
 
         public Job(Action<JobArgs> function, JobsContext context, uint groupID, uint groupJobOffset, uint groupJobEnd)
         {
