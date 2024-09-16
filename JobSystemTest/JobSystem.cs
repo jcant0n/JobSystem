@@ -119,10 +119,10 @@ namespace JobSystemTest
 
         public void Execute(JobsContext context, Action<JobArgs> function)
         {
+            context.Increment(1);
             Job job = new Job(function, context, 0, 0, 1);
             uint queueIndex = Interlocked.Increment(ref nextQueueIndex) % NumThreads;
             QueuePerWorker[queueIndex].Enqueue(job);
-            context.Increment(1);
             SignalPerWorker[queueIndex].Set();
         }
 
