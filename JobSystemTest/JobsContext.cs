@@ -1,26 +1,45 @@
 ﻿namespace JobSystemTest
 {
+    /// <summary>
+    /// Represents the context for a group of jobs, managing their execution state.
+    /// </summary>
     public class JobsContext
     {
-        public uint PendingJobs = 0;
-        public AutoResetEvent Signal;
+        protected uint pendingJobs = 0;
+        protected internal AutoResetEvent signal;
 
+        /// <summary>
+        /// Gets the number of pending jobs in this context.
+        /// </summary>
+        public uint PendingJobs => this.pendingJobs;
+
+        /// <summary>
+        /// Initializes a new instance of the JobsContext class.
+        /// </summary>
         public JobsContext()
         {
-            PendingJobs = 0;
-            Signal = new AutoResetEvent(false);
+            pendingJobs = 0;
+            signal = new AutoResetEvent(false);
         }
 
+        /// <summary>
+        /// Increments the number of pending jobs by the specified count.
+        /// </summary>
+        /// <param name="count">The number of jobs to add to the pending count.</param>
         public void Increment(uint count)
         {
-            Interlocked.Add(ref PendingJobs, count);
+            Interlocked.Add(ref pendingJobs, count);
         }
+
+        /// <summary>
+        /// Decrements the number of pending jobs and signals completion if all jobs are done.
+        /// </summary>
         public void Decrement()
         {
-            uint currentJobs = Interlocked.Decrement(ref PendingJobs);
+            uint currentJobs = Interlocked.Decrement(ref pendingJobs);
             if (currentJobs == 0)
             {
-                Signal.Set();
+                signal.Set();
             }
         }
     }
