@@ -33,6 +33,7 @@ namespace JobSystemTest
         private Random systemRandom;
         private XorShiftRandom xorShiftRandom;
         private Xoshiro256StarStar Xoshiro256Random;
+        private FastRandom fastRandom;
 
         private const uint N = 1000000;
 
@@ -51,6 +52,11 @@ namespace JobSystemTest
             return new Xoshiro256StarStar((ulong)(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId));
         });
 
+        private static readonly ThreadLocal<FastRandom> threadLocalFastRandom = new ThreadLocal<FastRandom>(() =>
+        {
+            return new FastRandom(Environment.TickCount ^ Thread.CurrentThread.ManagedThreadId);
+        });
+
         [GlobalSetup]
         public void Setup()
         {
@@ -58,6 +64,7 @@ namespace JobSystemTest
             systemRandom = new Random((int)seed);
             xorShiftRandom = new XorShiftRandom(seed);
             Xoshiro256Random = new Xoshiro256StarStar(seed);
+            fastRandom = new FastRandom((int)seed);
         }
 
         [Benchmark]
@@ -81,6 +88,7 @@ namespace JobSystemTest
             }
             return sum;
         }
+
         [Benchmark]
         public uint Xoshiro256Random_Next()
         {
@@ -92,6 +100,16 @@ namespace JobSystemTest
             return sum;
         }
 
+        [Benchmark]
+        public uint FastRandom_Next()
+        {
+            uint sum = 0;
+            for (int i = 0; i < N; i++)
+            {
+                sum += fastRandom.NextUInt();
+            }
+            return sum;
+        }
 
         [Benchmark]
         public uint SystemRandom_ThreadLocal_Next()
@@ -116,6 +134,7 @@ namespace JobSystemTest
             }
             return sum;
         }
+
         [Benchmark]
         public uint Xoshiro256Random_ThreadLocal_Next()
         {
@@ -128,5 +147,16 @@ namespace JobSystemTest
             return sum;
         }
 
+        [Benchmark]
+        public uint FastRandom_ThreadLocal_Next()
+        {
+            uint sum = 0;
+            var random = threadLocalFastRandom.Value;
+            for (int i = 0; i < N; i++)
+            {
+                sum += random.NextUInt();
+            }
+            return sum;
+        }
     }
 }
