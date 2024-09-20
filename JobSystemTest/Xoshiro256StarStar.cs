@@ -41,6 +41,17 @@ namespace JobSystemTest
             return x ^ (x >> 31);
         }
 
+        /// <summary>
+        /// Performs a left rotation on a 64-bit unsigned integer.
+        /// </summary>
+        /// <param name="x">The value to rotate.</param>
+        /// <param name="k">The number of bits to rotate by.</param>
+        /// <returns>The rotated value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong RotateLeft(ulong x, int k)
+        {
+            return (x << k) | (x >> (64 - k));
+        }
 
         /// <summary>
         /// Generates the next 64-bit unsigned integer.
@@ -79,6 +90,7 @@ namespace JobSystemTest
         /// </summary>
         /// <param name="maxValue">The exclusive upper bound of the random number.</param>
         /// <returns>A random number between 0 (inclusive) and maxValue (exclusive).</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint Next(uint maxValue)
         {
             return (uint)(NextUInt64() % (ulong)maxValue);
@@ -93,18 +105,6 @@ namespace JobSystemTest
         public uint Next(uint minValue, uint maxValue)
         {
             return minValue + Next(maxValue - minValue);
-        }
-
-        /// <summary>
-        /// Performs a left rotation on a 64-bit unsigned integer.
-        /// </summary>
-        /// <param name="x">The value to rotate.</param>
-        /// <param name="k">The number of bits to rotate by.</param>
-        /// <returns>The rotated value.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong RotateLeft(ulong x, int k)
-        {
-            return (x << k) | (x >> (64 - k));
         }
     }
 }
