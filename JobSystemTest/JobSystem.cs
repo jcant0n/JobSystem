@@ -85,6 +85,7 @@ namespace JobSystemTest
                 int attempts = 0;
                 int maxAttempts = (int)NumThreads - 1;
 
+                bool jobStolen = false;
                 while (attempts < maxAttempts)
                 {
                     uint victimThreadID = random.Next(NumThreads);
@@ -97,6 +98,7 @@ namespace JobSystemTest
                     if (QueuePerWorker[victimThreadID].TryDequeue(out var job))
                     {
                         job.Execute();
+                        jobStolen = true;
                         attempts = 0;
                     }
                     else
@@ -105,8 +107,14 @@ namespace JobSystemTest
                     }
                 }
 
-                SignalPerWorker[threadID].Reset();
+                // If no job was stolen and own queue is empty, yield to avoid busy-waiting
+                if (!jobStolen && QueuePerWorker[threadID].IsEmpty)
+                {
+                    Thread.Yield();
+                }
             }
+
+            SignalPerWorker[threadID].Reset();
         }
 
         /// <summary>

@@ -6,7 +6,7 @@ namespace JobSystemTest
     /// Represents the arguments passed to a job function.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct JobArgs
+    public readonly struct JobArgs
     {
         /// <summary>
         /// The index of the current job.

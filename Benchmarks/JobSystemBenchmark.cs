@@ -32,7 +32,7 @@ namespace JobSystemTest
         private int[,] result;
 
         private JobSystem jobSystem;
-        private int matrixSize = 500;
+        private int matrixSize = 1000;
         private ParallelOptions parallelOptions;
 
         [GlobalSetup]
@@ -64,25 +64,25 @@ namespace JobSystemTest
             Array.Clear(result, 0, result.Length);
         }
 
-        //[Benchmark(Baseline = true)]
-        //public void MultiplyMatrixSerially()
-        //{
-        //    // Multiply matrices on the main thread without parallelism
-        //    for (int i = 0; i < matrixSize; i++)
-        //    {
-        //        for (int j = 0; j < matrixSize; j++)
-        //        {
-        //            int sum = 0;
-        //            for (int k = 0; k < matrixSize; k++)
-        //            {
-        //                sum += matrix1[i, k] * matrix2[k, j];
-        //            }
-        //            result[i, j] = sum;
-        //        }
-        //    }
-        //}
-
         [Benchmark(Baseline = true)]
+        public void MultiplyMatrixSerially()
+        {
+            // Multiply matrices on the main thread without parallelism
+            for (int i = 0; i < matrixSize; i++)
+            {
+                for (int j = 0; j < matrixSize; j++)
+                {
+                    int sum = 0;
+                    for (int k = 0; k < matrixSize; k++)
+                    {
+                        sum += matrix1[i, k] * matrix2[k, j];
+                    }
+                    result[i, j] = sum;
+                }
+            }
+        }
+
+        [Benchmark]
         public void MultiplyMatrixWithParallelFor()
         {
             // Multiply matrices using Parallel.For
@@ -107,7 +107,7 @@ namespace JobSystemTest
             var context = new JobsContext();
 
             // Use JobSystem.Dispatch to distribute the work across jobs
-            jobSystem.Dispatch(context, (uint)matrixSize, 7, (args) =>
+            jobSystem.Dispatch(context, (uint)matrixSize, 16, (args) =>
             {
                 int i = (int)args.JobIndex;
                 for (int j = 0; j < matrixSize; j++)
