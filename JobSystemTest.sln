@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmarks", "Benchmarks\Be
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NativeArrayTest", "NativeArrayTest\NativeArrayTest.csproj", "{D7D50116-6B08-48DF-A5EA-EFD13E98D1F7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArrayTests", "ArrayTests\ArrayTests.csproj", "{879A4BD0-DC51-4437-972B-0FD3BB7D034A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{D7D50116-6B08-48DF-A5EA-EFD13E98D1F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7D50116-6B08-48DF-A5EA-EFD13E98D1F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7D50116-6B08-48DF-A5EA-EFD13E98D1F7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{879A4BD0-DC51-4437-972B-0FD3BB7D034A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{879A4BD0-DC51-4437-972B-0FD3BB7D034A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{879A4BD0-DC51-4437-972B-0FD3BB7D034A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{879A4BD0-DC51-4437-972B-0FD3BB7D034A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

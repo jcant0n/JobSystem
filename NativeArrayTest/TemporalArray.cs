@@ -6,7 +6,7 @@ using System.Threading;
 
 namespace NativeArrayTest
 {
-    public unsafe class NativeTemporalArray<T> : IDisposable where T : unmanaged
+    public unsafe class TemporalArray<T> : IDisposable where T : unmanaged
     {
         private const int ChunkSize = 1024;
         private const int ChunkBits = 10;              // 2^10 = 1024
@@ -17,7 +17,7 @@ namespace NativeArrayTest
         private long count;
         private readonly object lockObj = new();
 
-        public NativeTemporalArray(long capacity = ChunkSize)
+        public TemporalArray(long capacity = ChunkSize)
         {
             int needed = (int)((capacity + ChunkSize - 1) / ChunkSize);
             chunks = new List<IntPtr>(needed);
