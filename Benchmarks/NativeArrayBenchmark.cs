@@ -15,7 +15,7 @@ namespace JobSystemTest
 
         private int taskCount = Environment.ProcessorCount;
 
-        private UnmanagedBatch<int> unmanagedBatch;
+        private NativeTemporalArray<int> unmanagedBatch;
         private ConcurrentBag<int> concurrentBag;
 
         //——— INSERTION SETUPS ———
@@ -24,7 +24,7 @@ namespace JobSystemTest
         public void SetupInsertUnmanaged()
         {
             // pre‑allocate all chunks para evitar resize-on-the-fly
-            unmanagedBatch = new UnmanagedBatch<int>(TotalItems);
+            unmanagedBatch = new NativeTemporalArray<int>(TotalItems);
         }
 
         [IterationSetup(Target = nameof(Insert_ConcurrentBag))]
@@ -66,7 +66,7 @@ namespace JobSystemTest
         [GlobalSetup(Target = nameof(Access_UnmanagedBatch))]
         public void SetupAccessUnmanaged()
         {
-            unmanagedBatch = new UnmanagedBatch<int>(TotalItems);
+            unmanagedBatch = new NativeTemporalArray<int>(TotalItems);
             for (int i = 0; i < TotalItems; i++)
                 unmanagedBatch.Add(i);
         }

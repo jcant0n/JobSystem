@@ -6,18 +6,18 @@ using System.Threading;
 
 namespace NativeArrayTest
 {
-    public unsafe class UnmanagedBatch<T> : IDisposable where T : unmanaged
+    public unsafe class NativeTemporalArray<T> : IDisposable where T : unmanaged
     {
-        private const int ChunkSize = 4096;
-        private const int ChunkBits = 12;              // 2^12 = 4096
-        private const long ChunkMask = ChunkSize - 1;   // 0xFFF
+        private const int ChunkSize = 1024;
+        private const int ChunkBits = 10;              // 2^10 = 1024
+        private const long ChunkMask = ChunkSize - 1;   // 0x3FF
 
         // List of native-memory chunks (as IntPtr)
         private readonly List<IntPtr> chunks;
         private long count;
         private readonly object lockObj = new();
 
-        public UnmanagedBatch(long capacity = ChunkSize)
+        public NativeTemporalArray(long capacity = ChunkSize)
         {
             int needed = (int)((capacity + ChunkSize - 1) / ChunkSize);
             chunks = new List<IntPtr>(needed);
@@ -41,16 +41,25 @@ namespace NativeArrayTest
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long Add(T item)
         {
+            // Atomic increment to get unique index
             long idx = Interlocked.Increment(ref count) - 1;
+
+            // Calculate chunk position
             int chunkIndex = (int)(idx >> ChunkBits);
             int chunkOffset = (int)(idx & ChunkMask);
 
-            if (chunkIndex >= chunks.Count)
-                EnsureChunk(chunkIndex);
+            // Fast path
+            if (chunkIndex < chunks.Count)
+            {
+                void* basePtr = (void*)chunks[chunkIndex];
+                ((T*)basePtr)[chunkOffset] = item;
+                return idx;
+            }
 
-            void* basePtr = (void*)chunks[chunkIndex];
-            ((T*)basePtr)[chunkOffset] = item;
-
+            // Slow path
+            EnsureChunk(chunkIndex);
+            void* ptr = (void*)chunks[chunkIndex];
+            ((T*)ptr)[chunkOffset] = item;
             return idx;
         }
 
