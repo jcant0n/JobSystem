@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\JobSystemTest\JobSystemTest.csproj" />
+    <ProjectReference Include="..\NativeArrayTest\NativeArrayTest.csproj" />
   </ItemGroup>
 
 </Project>
