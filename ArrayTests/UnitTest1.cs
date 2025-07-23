@@ -236,5 +236,93 @@ namespace ArrayTests
 
             output.WriteLine($"Performance ratio: {(double)listTime / arrayTime:F2}x");
         }
+
+        [Fact]
+        public void Clear_DoesNotGenerateGCPressure()
+        {
+            const int itemCount = 1000000;
+            const int clearCount = 100;
+            
+            // Record initial GC counts
+            int[] initialCounts = new int[3];
+            for (int i = 0; i < 3; i++)
+                initialCounts[i] = GC.CollectionCount(i);
+            
+            // Temporal array test
+            using (var temporalArray = new TemporalArray<int>(itemCount))
+            {
+                // Fill the array
+                for (int i = 0; i < itemCount; i++)
+                    temporalArray.Add(i);
+                    
+                // Clear multiple times
+                for (int i = 0; i < clearCount; i++)
+                {
+                    temporalArray.Clear();
+                    // Add one item to ensure the array is working
+                    temporalArray.Add(i);
+                }
+            }
+            
+            // Record GC counts after TemporalArray test
+            int[] temporalArrayCounts = new int[3];
+            for (int i = 0; i < 3; i++)
+                temporalArrayCounts[i] = GC.CollectionCount(i) - initialCounts[i];
+                
+            // Reset initial counts
+            for (int i = 0; i < 3; i++)
+                initialCounts[i] = GC.CollectionCount(i);
+            
+            // Standard List test for comparison
+            {
+                var standardList = new List<int>(itemCount);
+                
+                // Fill the list
+                for (int i = 0; i < itemCount; i++)
+                    standardList.Add(i);
+                    
+                // Clear multiple times
+                for (int i = 0; i < clearCount; i++)
+                {
+                    standardList.Clear();
+                    // Add one item to ensure the list is working
+                    standardList.Add(i);
+                }
+                
+                standardList = null;
+            }
+            
+            // Force a collection to ensure standardList is collected
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            
+            // Record GC counts after standard List test
+            int[] standardListCounts = new int[3];
+            for (int i = 0; i < 3; i++)
+                standardListCounts[i] = GC.CollectionCount(i) - initialCounts[i];
+            
+            // Log the collection counts
+            output.WriteLine("TemporalArray GC collections:");
+            output.WriteLine($"  Gen 0: {temporalArrayCounts[0]}");
+            output.WriteLine($"  Gen 1: {temporalArrayCounts[1]}");
+            output.WriteLine($"  Gen 2: {temporalArrayCounts[2]}");
+            
+            output.WriteLine("Standard List GC collections:");
+            output.WriteLine($"  Gen 0: {standardListCounts[0]}");
+            output.WriteLine($"  Gen 1: {standardListCounts[1]}");
+            output.WriteLine($"  Gen 2: {standardListCounts[2]}");
+            
+            // Assert that TemporalArray caused fewer Gen 2 collections
+            Assert.True(temporalArrayCounts[2] <= standardListCounts[2], 
+                "TemporalArray should not cause more Gen 2 collections than List");
+                
+            // Also check if the overall number of collections is lower
+            int temporalTotal = temporalArrayCounts.Sum();
+            int standardTotal = standardListCounts.Sum();
+            
+            output.WriteLine($"Total GC collections - TemporalArray: {temporalTotal}, List: {standardTotal}");
+            Assert.True(temporalTotal <= standardTotal, 
+                "TemporalArray should not cause more total GC collections than List");
+        }
     }
 }

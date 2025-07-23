@@ -12,7 +12,6 @@ namespace NativeArrayTest
         private const int ChunkBits = 10;              // 2^10 = 1024
         private const long ChunkMask = ChunkSize - 1;   // 0x3FF
 
-        // List of native-memory chunks (as IntPtr)
         private readonly List<IntPtr> chunks;
         private long count;
         private readonly object lockObj = new();
