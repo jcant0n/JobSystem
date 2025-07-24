@@ -324,5 +324,143 @@ namespace ArrayTests
             Assert.True(temporalTotal <= standardTotal, 
                 "TemporalArray should not cause more total GC collections than List");
         }
+
+        [Fact]
+        public void Different_Unmanaged_DataTypes()
+        {
+            // Test with various unmanaged types
+            using var byteArray = new TemporalArray<byte>();
+            using var longArray = new TemporalArray<long>();
+            using var doubleArray = new TemporalArray<double>();
+            using var structArray = new TemporalArray<Vector3>();
+            
+            // Add and verify items for each type
+            byteArray.Add(255);
+            longArray.Add(long.MaxValue);
+            doubleArray.Add(Math.PI);
+            structArray.Add(new Vector3(1, 2, 3));
+            
+            Assert.Equal(255, byteArray[0]);
+            Assert.Equal(long.MaxValue, longArray[0]);
+            Assert.Equal(Math.PI, doubleArray[0]);
+            Assert.Equal(new Vector3(1, 2, 3), structArray[0]);
+        }
+
+        [Fact]
+        public void ChunkBoundary_Behavior()
+        {
+            using var array = new TemporalArray<int>();
+            const int chunkSize = 1024; // Based on your implementation
+            
+            // Add exactly one chunk worth of items
+            for (int i = 0; i < chunkSize; i++)
+            {
+                array.Add(i);
+            }
+            Assert.Equal(chunkSize, array.Count);
+            
+            // Verify all items are correct
+            for (int i = 0; i < chunkSize; i++)
+            {
+                Assert.Equal(i, array[i]);
+            }
+            
+            // Add one more item to force new chunk allocation
+            array.Add(chunkSize);
+            Assert.Equal(chunkSize + 1, array.Count);
+            Assert.Equal(chunkSize, array[chunkSize]);
+        }
+
+        // Custom struct for testing
+        public struct Vector3
+        {
+            public float X, Y, Z;
+            
+            public Vector3(float x, float y, float z)
+            {
+                X = x;
+                Y = y;
+                Z = z;
+            }
+            
+            public override bool Equals(object obj) => 
+                obj is Vector3 v && X == v.X && Y == v.Y && Z == v.Z;
+            
+            public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+        }
+
+        [Fact]
+        public void ConcurrentReadWrite_Operations()
+        {
+            using var array = new TemporalArray<int>();
+            const int itemCount = 10000;
+            
+            // Populate with initial data
+            for (int i = 0; i < itemCount; i++)
+            {
+                array.Add(i);
+            }
+            
+            // Set up concurrent read and write tasks
+            var tasks = new List<Task>();
+            
+            // Reader tasks
+            for (int r = 0; r < 4; r++)
+            {
+                tasks.Add(Task.Run(() => {
+                    for (int i = 0; i < itemCount; i++)
+                    {
+                        // Read random items
+                        var index = i % array.Count;
+                        var value = array[index];
+                        Assert.True(value >= 0);
+                    }
+                }));
+            }
+            
+            // Writer tasks
+            for (int w = 0; w < 4; w++)
+            {
+                tasks.Add(Task.Run(() => {
+                    for (int i = 0; i < 1000; i++)
+                    {
+                        array.Add(itemCount + i);
+                    }
+                }));
+            }
+            
+            // Wait for all tasks
+            Task.WaitAll(tasks.ToArray());
+            
+            // Verify count is correct
+            Assert.Equal(itemCount + (4 * 1000), array.Count);
+        }
+
+        [Fact]
+        public void LargeArray_StressTest()
+        {
+            const int millions = 10;
+            const int itemCount = millions * 1_000_000;
+            
+            using var array = new TemporalArray<int>(itemCount);
+            
+            // Add a large number of items
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            Parallel.For(0, itemCount, i => array.Add(i));
+            watch.Stop();
+            
+            output.WriteLine($"Added {millions} million items in {watch.ElapsedMilliseconds}ms");
+            
+            // Verify count
+            Assert.Equal(itemCount, array.Count);
+            
+            // Check random samples
+            var random = new Random(42);
+            for (int i = 0; i < 1000; i++)
+            {
+                int index = random.Next(0, (int)array.Count - 1);
+                Assert.True(array[index] >= 0 && array[index] < itemCount);
+            }
+        }
     }
 }
